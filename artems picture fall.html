@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Artem's Picture Fall</title>
+    <meta charset="UTF-8"
+        name="viewport"
+        content="width=device-width, user-scalable=no" />
+
+    <script language="javascript"
+        type="text/javascript"
+        src="./important_files/picturefall_logic.js"></script>
+    <script language="javascript"
+        type="text/javascript"
+        src="./important_files/keywords_config.js"></script>
+
+    <link rel="stylesheet"
+        href="./important_files/global_styles.css">
+    </link>
+</head>
+
+<body>
+
+    <div id="MAIN_WRAPPER">
+        <div style="background-color: black"
+            id="MAIN_SCREEN"></div>
+    </div>
+    <script>
+        //TODO fix this whole garbage file
+        let IMAGE_PATH = "./images/";
+        let TIME_PER_PLAYER = 61;
+
+        let LEFT_PADDING = width * 0.1;
+        let LETTER_WIDTH = width / 20;
+        let COL_NUM = 10;
+        let TOP_PADDING = height * 0.2;
+
+        let SESSION_WORDS = [];
+        let SESSION_LETTERS = [];
+        let CURRENT_REQUIRED_WORDS = [];
+        let SELECTED_LETTERS = [];
+        let CURRENT_POINTS = 0;
+        let TOTAL_POINTS = 0;
+        let POINT_LEADERBOARD = [];
+
+        let EXTRAS_MODE = false;
+        let EXTRA_KEYWORDS_CONFIG = {};
+
+
+        let CHOSEN_WORD_ARRAY = null;
+
+        function setup() {
+            LEFT_PADDING = width * 0.1;
+            LETTER_WIDTH = width / 12;
+            COL_NUM = 10;
+            TOP_PADDING = height * 0.1;
+            setupKeyboard().then((x) => {
+                SELECTED_LETTERS = x.letters.split("").map((x) => x.toLowerCase());
+                if (Object.keys(x).includes("words") && x.words !== undefined) {
+                    CHOSEN_WORD_ARRAY = WORD_ARRAYS[x.words];
+                    console.log(CHOSEN_WORD_ARRAY);
+                    SELECTED_LETTERS = ["#"];
+                }
+                if (SELECTED_LETTERS.length === 0) {
+                    SELECTED_LETTERS = ["&"];
+                }
+                x.removeFn();
+                play();
+                selectPlayLetter().then((y) => {
+                    y.removeFn();
+                    SESSION_LETTERS = y.letters;
+                    startScreen().then(() => {
+                        setPointsText(CURRENT_POINTS);
+                        setStreakText(1);
+                        IS_TIME_TICKING = true;
+                        startDropping(y.letters);
+                        toggleHeader();
+                    });
+                });
+            });
+        }
+
+        let headerDiv = {};
+
+        function toggleHeader() {
+            if (checkObj(headerDiv)) {
+                headerDiv.remove();
+                headerDiv = {};
+            } else {
+                headerDiv = new Rectangle(0, 0, width, height / 5);
+                headerDiv.set("backgroundColor", "rgba(255,255,255,0.5)");
+                const LEFT_OFFSET = width / 3.4;
+                CURRENT_REQUIRED_WORDS.forEach((word, i) => {
+                    let letter = word.letter;
+                    let url = word.url;
+                    const IMAGE_WIDTH = width / 20;
+                    const IMAGE_PADDING = width / 500;
+
+                    function getXY(index) {
+                        let offset = LEFT_OFFSET + width / 4 + width / 500;
+                        let x = offset + (index % 5) * (IMAGE_WIDTH + IMAGE_PADDING);
+                        let y = IMAGE_PADDING + ((i / 5) | 0) * IMAGE_WIDTH;
+                        return {
+                            x: x,
+                            y: y,
+                        };
+                    }
+                    let img = new Img(url, getXY(i).x, getXY(i).y, IMAGE_WIDTH).onLoad(() => {
+                        img = img.asSquare();
+                        //img.fromCenter();
+                        img.set("backgroundColor", "rgba(125,125,255,0.5)");
+                        img.set("borderRadius", r(width / 100) + "px");
+                        headerDiv.attach(img);
+                    });
+                });
+            }
+        }
+
+        let timeP = {};
+        let SHOW_SPLIT_LINE = false;
+
+        function setTimeText(num) {
+            function makeString(num) {
+                return num + "s";
+            }
+            let color = "black";
+            if (num <= 15) {
+                color = "yellow";
+            }
+            if (num <= 5) {
+                color = "red";
+            }
+            if (checkObj(timeP)) {
+                timeP.string = makeString(num);
+                timeP.color = color;
+                timeP.set("border", color + " solid 3px");
+            } else {
+                timeP = new P(makeString(CURRENT_POINTS + num), width / 2, width / 35, r(width / 20)).fromCenter();
+                timeP.color = color;
+                timeP.set("backgroundColor", "rgba(255,255,255,0.8)");
+                timeP.set("border", color + " solid 3px");
+                timeP.set("borderRadius", r(width / 50) + "px");
+                timeP.zIndex = 100;
+                let line = Line.fromAngle(timeP.width / 2, timeP.height, height, 90, 2);
+                line.color = "black";
+                line.set("border", "dashed white 3px");
+                timeP.attach(line);
+                line.zIndex = 99;
+                if (!SHOW_SPLIT_LINE) line.set("display", "none");
+                timeP.shape.addEventListener("click", () => {
+                    if (SHOW_SPLIT_LINE) {
+                        line.set("display", "none");
+                    } else {
+                        line.set("display", "");
+                    }
+                    SHOW_SPLIT_LINE = !SHOW_SPLIT_LINE;
+                });
+            }
+        }
+
+        let pointsP = {};
+        let IS_ADDING_POINTS = false;
+        let points_queue = [];
+
+        function setPointsText(num, dontAdd) {
+            function makeString(num) {
+                return "Points: " + (num | 0) + "   ";
+            }
+            if (IS_ADDING_POINTS) {
+                points_queue.push(num);
+                return;
+            }
+            IS_ADDING_POINTS = true;
+            let final_points = CURRENT_POINTS + num;
+            let initial_points = CURRENT_POINTS;
+            if (checkObj(pointsP)) {
+                let chunk = num / 17;
+                if (IS_TIME_TICKING) {
+                    for (let i = 0; i < 18; i++) {
+                        pointsP.set("textShadow", "lightgreen 0 0 5px");
+                        if (i === 17 && !dontAdd) {
+                            CURRENT_POINTS += num;
+                            TOTAL_POINTS += num;
+                        }
+                        setTimeout(() => {
+                            if (IS_TIME_TICKING) {
+                                if (i === 17) {
+                                    pointsP.string = makeString(final_points);
+                                    pointsP.set("textShadow", "");
+                                    IS_ADDING_POINTS = false;
+                                    if (points_queue.length > 0) {
+                                        let nextNum = points_queue.shift();
+                                        setPointsText(nextNum);
+                                    }
+                                } else {
+                                    initial_points += chunk;
+                                    pointsP.string = makeString(initial_points | 0);
+                                }
+                            }
+                        }, i * 30);
+                    }
+                } else {
+                    if (!dontAdd) {
+                        CURRENT_POINTS += num;
+                        TOTAL_POINTS += num;
+                    }
+                }
+            } else {
+                pointsP = new P(makeString(CURRENT_POINTS + num), width / 50, width / 50, r(width / 20));
+                pointsP.color = "blue";
+                pointsP.set("backgroundColor", "rgba(255,255,255,0.8)");
+                pointsP.set("border", "blue solid 3px");
+                pointsP.set("borderRadius", r(width / 50) + "px");
+                pointsP.zIndex = 100;
+                IS_ADDING_POINTS = false;
+                if (!dontAdd) {
+                    CURRENT_POINTS += num;
+                    TOTAL_POINTS += num;
+                }
+            }
+        }
+
+        let streakP = {};
+
+        function setStreakText(num) {
+            let string = "x" + (num | 0);
+            let color = getValue('streakColor', num)
+            if (checkObj(streakP)) {
+                streakP.string = string;
+                streakP.color = color;
+                streakP.set("border", color + " solid 3px");
+            } else {
+                streakP = new P(string, width - width / 6, width / 50, r(width / 20));
+                streakP.color = color;
+                streakP.set("backgroundColor", "rgba(255,255,255,0.8)");
+                streakP.set("border", color + " solid 3px");
+                streakP.set("borderRadius", r(width / 50) + "px");
+                streakP.zIndex = 100;
+            }
+        }
+
+        function nextRelay() {
+            stop();
+            PLAYER_TIME_LEFT = TIME_PER_PLAYER;
+            return new Promise((resolve) => {
+                fadeScreen("rgba(0,0,0,0.7)", 15).then((fadeOut) => {
+                    let goodJob = new P("Good Job!", width / 2, height * 0.1, r(width / 20) + "px").fromCenter();
+                    goodJob.color = "lightgreen";
+                    goodJob.zIndex = 16;
+                    setTimeout(() => {
+                        //SHOW THIS ROUNDS POINTS
+                        let currentPointsP = new P("Your Points: 0", width / 2, height * 0.2, r(width / 22) + "px").fromCenter();
+                        currentPointsP.zIndex = 16;
+                        currentPointsP.color = "lightblue";
+                        let chunk = CURRENT_POINTS / 60;
+                        let counter = 0;
+                        POINT_LEADERBOARD.push(CURRENT_POINTS);
+                        for (let i = 0; i <= 60; i++) {
+                            //DO INCREMENT
+                            setTimeout(() => {
+                                if (i === 60) {
+                                    currentPointsP.string = "Your Points: " + r(CURRENT_POINTS);
+                                    setTimeout(() => {
+                                        //SHOW TOTAL POINTS FOR THIS SESSION
+                                        let counter2 = TOTAL_POINTS - CURRENT_POINTS;
+                                        let totalPointsP = new P("Everybody's Points: " + counter2, width / 2, height * 0.3, r(width / 22)).fromCenter();
+                                        totalPointsP.zIndex = 16;
+                                        totalPointsP.color = "lightred";
+                                        let chunk = CURRENT_POINTS / 60;
+                                        let topScoresP = new P("Top Scores", width * 0.8, height * 0.1, r(width / 30) + "px").fromCenter();
+                                        let numPs = [];
+                                        for (let i = 0; i <= 60; i++) {
+                                            //show leaderboard
+                                            topScoresP.zIndex = 19;
+                                            POINT_LEADERBOARD.sort((a, b) => a < b).forEach((num, i) => {
+                                                if (i > 9) return;
+                                                let numP = new P(num, width * 0.8, height / 8 + (i + 1) * height * 0.07, r(width / 40) + "px").fromCenter();
+                                                numP.zIndex = 19;
+                                                numPs.push(numP);
+                                            });
+                                            //do decrement of current points and increment total points
+                                            setTimeout(() => {
+                                                if (i === 60) {
+                                                    totalPointsP.string = "Everybody's Points: " + TOTAL_POINTS;
+                                                    currentPointsP.string = "Your Points: " + 0;
+                                                    setTimeout(() => {
+                                                        currentPointsP.remove(); //delay this
+                                                    }, 100);
+                                                    resolve({
+                                                        fadeOut: fadeOut,
+                                                        removeFn: () => {
+                                                            totalPointsP.remove();
+                                                            goodJob.remove();
+                                                            topScoresP.remove();
+                                                            numPs.forEach((x) => {
+                                                                x.remove();
+                                                            });
+                                                        },
+                                                    });
+                                                } else {
+                                                    counter -= chunk;
+                                                    counter2 += chunk;
+                                                    currentPointsP.string = "Your Points: " + r(counter);
+                                                    totalPointsP.string = "Total Points: " + r(counter2);
+                                                }
+                                            }, i * 17);
+                                        }
+                                    }, 3000);
+                                } else {
+                                    counter += chunk;
+                                    currentPointsP.string = "Your Points: " + r(counter);
+                                }
+                            }, i * 17);
+                        }
+                    }, 500);
+                });
+            });
+        }
+
+        function startScreen() {
+            let LETTER_WIDTH = width / 10;
+            let yourGoal = new P("Your Goal:", width / 2, width * 0.1, r(width / 20)).fromCenter();
+            yourGoal.zIndex = 16;
+            yourGoal.color = "lightgreen";
+            CURRENT_REQUIRED_WORDS = [];
+            let stuffToDelete = [];
+            stuffToDelete.push(yourGoal);
+            SESSION_WORDS = shuffle(SESSION_WORDS)
+            console.log(SESSION_WORDS)
+            SESSION_WORDS.forEach((word, i) => {
+                let letter = word.letter;
+                let url = word.url
+
+                function getXY(index) {
+                    let x = width / 2 - LETTER_WIDTH * (Math.min(SESSION_WORDS.length / 2, 5) - (index % 10));
+                    let y = height * 0.5 + LETTER_WIDTH * ((index / 10) | 0);
+                    return {
+                        x: x,
+                        y: y,
+                    };
+                }
+                let img = new Img(url, getXY(i).x, getXY(i).y, LETTER_WIDTH).onLoad(() => {
+                    img = img.asSquare();
+                    CURRENT_REQUIRED_WORDS.push(word);
+                    img.shape.addEventListener("click", () => {
+                        if (CURRENT_REQUIRED_WORDS.includes(word)) {
+                            CURRENT_REQUIRED_WORDS.splice(CURRENT_REQUIRED_WORDS.indexOf(word), 1);
+                            img.attachments.imgs[0].set("opacity", "0");
+                        } else {
+                            CURRENT_REQUIRED_WORDS.push(word);
+                            img.attachments.imgs[0].set("opacity", "1");
+                        }
+                    });
+                    img.zIndex = 16;
+                    img.set("backgroundColor", "rgba(200,255,200,0.5)");
+                    img.set("borderRadius", r(width / 100) + "px");
+                    stuffToDelete.push(img);
+                });
+            });
+            let goBtn = new P("GO", width * 0.05, height * 0.1, r(width / 20)).fromCenter();
+            goBtn.zIndex = 16;
+            goBtn.set("backgroundColor", "lightgreen");
+            goBtn.color = "green";
+            goBtn.set("borderColor", "green");
+            goBtn.set("borderRadius", r(width / 100) + "px");
+            stuffToDelete.push(goBtn);
+            return new Promise((resolve) => {
+                goBtn.shape.addEventListener("click", () => {
+                    stuffToDelete.forEach((x) => {
+                        x.remove();
+                    });
+                    resolve();
+                });
+            });
+        }
+
+        function createPathObjects(arrayOfWords) {
+            let objs = [];
+            arrayOfWords.forEach((word) => {
+                let letter = word[0];
+                let found = EXTRA_KEYWORDS_CONFIG[letter].filter((x) => x.name == word);
+                if (found.length) {
+                    objs.push(found[0]);
+                } else {
+                    console.error('didnt find ' + word)
+                }
+            });
+            return objs;
+        }
+
+        function selectPlayLetter() {
+            let stuffToDelete = [];
+            SESSION_WORDS = [];
+            let LAST_Y = TOP_PADDING
+            return new Promise((resolve) => {
+                let chosenFew = [];
+                let imgs = [];
+                SELECTED_LETTERS.forEach((letter, i) => {
+                    let objectToProcess = {};
+                    let ONLY_EXTRAS = false;
+                    let pDiv = {};
+                    console.log(letter)
+                    let left_padding = width * 0.3;
+                    if (SELECTED_LETTERS.length > 3) {
+                        LETTER_WIDTH = width * 0.05
+                    }
+                    if (alphabet.split("").includes(letter)) {
+                        pDiv = new P(letter.toUpperCase() + ": ", left_padding - LETTER_WIDTH, LAST_Y, LETTER_WIDTH).fromCenter();
+                        objectToProcess = KEYWORDS_CONFIG[letter];
+                        pDiv.color = "yellow";
+                        stuffToDelete.push(pDiv);
+                    } else if (["&"].includes(letter)) {
+                        ONLY_EXTRAS = true;
+                        left_padding = width * 0.2
+                        objectToProcess = KEYWORDS_CONFIG['animals'];
+                    } else if ((letter == "+")) {
+                        ONLY_EXTRAS = true;
+                        left_padding = width * 0.2
+                        objectToProcess = KEYWORDS_CONFIG['characters'];
+                    } else if (letter == '#') {
+                        CHOSEN_WORD_ARRAY.forEach(word => {
+                            //try main letter
+                            if (KEYWORDS_CONFIG[word[0]][word]) {
+                                objectToProcess[word] = KEYWORDS_CONFIG[word[0]][word]
+                            } else {
+                                //in cases like box is x, we need to search for it..
+                                let all_words = {}
+                                Object.keys(KEYWORDS_CONFIG).forEach(x => {
+                                    Object.keys(KEYWORDS_CONFIG[x]).forEach(word => {
+                                        all_words[word] = x
+                                    })
+                                })
+                                if (all_words[word]) {
+                                    objectToProcess[word] = all_words[word]
+                                } else {
+                                    console.log(word + ' doesnt exist')
+                                }
+                            }
+                        })
+                        KEYWORDS_CONFIG['#'] = objectToProcess
+                        ONLY_EXTRAS = true;
+                        left_padding = width * 0.2
+                    }
+                    let IMAGE_WIDTH = width * 0.06
+                    if (SELECTED_LETTERS.length > 3) {
+                        IMAGE_WIDTH = width * 0.04
+                    }
+
+                    shuffle(Object.keys(objectToProcess)).splice(0, 50).forEach((name, j) => {
+                        let url = objectToProcess[name];
+                        let x_index = ONLY_EXTRAS ? j % 10 : j % 8
+                        let y_index = ONLY_EXTRAS ? (j / 10) | 0 : (j / 8) | 0
+
+                        let img = new Img(url, left_padding + IMAGE_WIDTH * x_index, LAST_Y + LETTER_WIDTH * y_index, IMAGE_WIDTH).onLoad(() => {
+                            img.name = name;
+                            img = img.asSquare();
+                            img.y -= LETTER_WIDTH / 2;
+                            img.set("border", "solid transparent 3px");
+                            let obj = {
+                                name: name,
+                                url: url,
+                                letter: letter
+                            }
+                            img.shape.addEventListener("click", () => {
+                                if (SESSION_WORDS.includes(obj)) {
+                                    img.set("border", "solid transparent 3px");
+                                    SESSION_WORDS.splice(SESSION_WORDS.indexOf(obj), 1);
+                                    chosenFew.splice(SESSION_WORDS.indexOf(letter), 1);
+                                } else {
+                                    if (SESSION_WORDS.length >= 20) {
+                                        console.log(imgs);
+                                        let toRemove = SESSION_WORDS[0];
+                                        imgs.filter((x) => x.name === toRemove)[0].shape.click();
+                                        console.log(toRemove);
+                                    }
+                                    SESSION_WORDS.push(obj);
+                                    chosenFew.push(letter)
+                                    img.set("border", "solid green 3px");
+                                    img.set("borderRadius", width / 10 + "px");
+                                }
+                            });
+                            stuffToDelete.push(img);
+                        });
+                        console.log(j, (Object.keys(objectToProcess)).splice(0, 50).length - 1)
+                        if (j == (Object.keys(objectToProcess)).splice(0, 50).length - 1) {
+                            LAST_Y = LAST_Y + LETTER_WIDTH * (y_index + 1)
+                        }
+                        imgs.push(img);
+                    });
+                    if (!ONLY_EXTRAS) {
+                        pDiv.shape.addEventListener("click", () => {
+                            imgs.forEach((x) => {
+                                console.log(x)
+                                if (x.name[0] == letter) x.shape.click();
+                            });
+                        });
+                    }
+                    let checkDiv = new P("✔", 10, 10, r(width / 30) + "px");
+                    checkDiv.color = "green";
+                    stuffToDelete.push(checkDiv);
+                    checkDiv.shape.addEventListener("click", () => {
+                        resolve({
+                            letters: chosenFew,
+                            removeFn: () => {
+                                stuffToDelete.forEach((x) => {
+                                    x.remove();
+                                });
+                            },
+                        });
+                    });
+                });
+            });
+        }
+
+        function makeLetter(letter, x, y) {
+            let div = new Square(x, y, LETTER_WIDTH - 10);
+            div.set("border", "solid white " + r(width / 300) + "px");
+            div.set("borderRadius", r(width / 100) + "px");
+            div.set("display", "grid");
+            div.set("justify-items", "center");
+            div.set("backgroundColor", "rgba(255,255,255,0.2)");
+            let l = new P(letter, 0, 0);
+            l.set("position", "");
+            l.set("color", "white");
+            l.set("font-family", "sans");
+            l.set("font-size", r(width / 30) + "px");
+            l.set("padding", "0");
+            l.set("margin", "auto 0");
+            div.letter = letter;
+            div.attach(l);
+            return div;
+        }
+
+        function setupKeyboard() {
+            let alphabet_divs = [];
+            return new Promise((resolve) => {
+                let selectedletters = "";
+                let wordArray = undefined;
+                (alphabet.toUpperCase() + "#+&✔").split("").forEach((letter, i) => {
+                    let div = makeLetter(letter, LEFT_PADDING + LETTER_WIDTH * (i % COL_NUM), height * 0.2 + LETTER_WIDTH * ((i / COL_NUM) | 0));
+                    div.shape.addEventListener("click", () => {
+                        div.set("border", "green solid " + r(width / 300) + "px");
+                        if (["+", "#", "&"].includes(letter)) {
+                            selectedletters = letter;
+                            //fancy way of setting the other numbers to white
+                            alphabet_divs
+                                .filter((x) => letter != x.letter)
+                                .forEach((x) => {
+                                    x.set("border", "white solid " + r(width / 300) + "px");
+                                });
+                            if (letter === "#") {
+                                let d = new Div(width * 0.1, height * 0.1, width * 0.6, height * 0.6);
+                                d.color = "white";
+                                WORD_ARRAYS.forEach((x, i) => {
+                                    let p = new P(x.slice(0, 5).join(', '), 0, i * d.height * 0.07)
+                                    p.color = 'black'
+                                    d.attach(p)
+                                    p.shape.addEventListener('click', ev => {
+                                        wordArray = i;
+                                        console.log(i)
+                                        d.remove();
+                                    })
+                                })
+                            }
+                        } else if (alphabet.toUpperCase().includes(letter)) {
+                            if (selectedletters.includes(letter)) {
+                                selectedletters = selectedletters.replace(letter, "");
+                                div.set("border", "white solid " + r(width / 300) + "px");
+                            } else {
+                                if (selectedletters.length >= 4) {
+                                    let toRemove = selectedletters[0];
+                                    selectedletters = selectedletters.slice(1);
+                                    alphabet_divs.filter((x) => x.letter === toRemove)[0].set("border", "white solid " + r(width / 300) + "px");
+                                }
+                                selectedletters += letter;
+                            }
+                        } else {
+                            resolve({
+                                letters: selectedletters,
+                                words: wordArray,
+                                removeFn: function () {
+                                    alphabet_divs.forEach((div) => {
+                                        div.remove();
+                                    });
+                                },
+                            });
+                        }
+                    });
+                    alphabet_divs.push(div);
+                });
+            });
+        }
+
+
+
+        let clickColumns = 15;
+        let doubleClickPrevention = Array(clickColumns).fill({
+            time: new Date(),
+        });
+
+        function createFaller(word_obj, fallSpeed, spinSpeed, extraPoints, color, theta, isBomb) {
+            let speed = fallSpeed || getRandom(1, 3);
+            let spin = spinSpeed || 0;
+            theta = theta || 0;
+            let faller = new FallingImg(getRandom(width * 0.1, width * 0.9), -height / 10, word_obj.name, speed, true);
+            let letter = word_obj.letter;
+            let url = word_obj.url
+            FallingImg.createIcon(url, width / 10, width / 10, color || "blue").then((x) => {
+                faller.hasNoBounds = true;
+                faller.addSprite(x.fromCenter());
+                faller.doFall();
+                faller.angle = theta;
+                faller.maxbounds.y = height * 1.2;
+                faller.extraPoints = extraPoints;
+                if (spin !== 0) {
+                    faller.doSpin(36000, getRandom(-1) * spin);
+                }
+                THINGS_TO_UPDATE.push(faller);
+
+                function handleClick() {
+                    let time = doubleClickPrevention[(width / faller.x) | 0].time;
+                    if (new Date() - time < 1000) {
+                        console.log('too fast')
+                        return;
+                    }
+                    doubleClickPrevention[(width / faller.x) | 0].time = new Date();
+                    if (CURRENT_REQUIRED_WORDS.map(x => x.name).includes(word_obj.name)) {
+                        handleCorrectWord(word_obj, faller);
+                    } else {
+                        handleIncorrectWord(word_obj, faller);
+                    }
+                    faller.kill();
+                }
+                if (isBomb) {
+                    x.set("border", "solid red 5px");
+                    let fire = new Img("./important_files/explosion.png", -width / 10, -width / 10, width / 10).onLoad(() => {
+                        faller.addDeathImage(fire.shape);
+                    });
+                    handleClick = function (e) {
+                        faller.kill();
+                        showPoints(faller.x, faller.y, r(-CURRENT_POINTS / 4));
+                        setPointsText(r(-CURRENT_POINTS / 4));
+                        setStreakText(1);
+                        CURRENT_STREAK = 0;
+                        e.preventDefault();
+                    };
+                    let bomb = new Img("./important_files/bomb.png", width / 50, width / 50, width / 15);
+                    x.attach(bomb);
+                    bomb.set("opacity", "0.7");
+                }
+                x.shape.addEventListener("click", handleClick);
+                x.shape.addEventListener("touchstart", handleClick);
+            });
+        }
+
+        //======= DICTIONARIES ==========
+
+        function getValue(dict, num) {
+            let dictionary = {};
+            switch (dict) {
+                case 'streakColor':
+                    dictionary = streakColorDict;
+                    break;
+                case 'multiplier':
+                    dictionary = multiplierDict;
+                    break;
+                case 'pointsColor':
+                    dictionary = pointsColorDict;
+                    break;
+            }
+            return dictionary[Object.keys(dictionary).reduce((a, b) => {
+                if (num >= a && num >= b) return Math.max(a, b);
+                if (num >= a && num < b) return a;
+                if (num >= b) return b;
+            })]
+        }
+
+        const multiplierDict = {
+            //if {key} and above, set multiplier to {value}
+            1000: 64,
+            50: 32,
+            25: 16,
+            12: 8,
+            5: 4,
+            3: 2,
+            0: 1,
+        };
+
+        const streakColorDict = {
+            //if {key} or above, return {value}
+            15: 'red',
+            7: 'deeppink',
+            3: 'blue',
+            1: 'green',
+            0: 'grey',
+        }
+
+        const pointsColorDict = {
+            //if {key} or above, return {value}
+            100: 'yellow',
+            80: 'purple',
+            30: 'lightblue',
+            10: 'lightgreen',
+            0: 'green',
+            '-1000': 'red'
+        }
+
+        function handleCorrectWord(word, data) {
+            //calculate points later
+            CURRENT_STREAK++;
+            let extraPoints = 0;
+            if (data.extraPoints) {
+                extraPoints = data.extraPoints;
+            }
+            let numOfPoints = calculatePoints(true, CURRENT_STREAK, extraPoints);
+            showPoints(data.x, data.y, numOfPoints);
+            setPointsText(numOfPoints);
+            setStreakText(getValue('multiplier', CURRENT_STREAK));
+        }
+
+        function handleIncorrectWord(word, data) {
+            CURRENT_STREAK = 0;
+            let numOfPoints = -10;
+            showPoints(data.x, data.y, numOfPoints);
+            setPointsText(numOfPoints);
+            setStreakText(1);
+        }
+
+        let CURRENT_STREAK = 0;
+
+        function calculatePoints(isCorrect, currentStreak, extras) {
+            let extraPoints = extras || 0;
+            return isCorrect * 1 * getValue('multiplier', currentStreak) + extraPoints + currentStreak;
+        }
+
+        let THINGS_TO_UPDATE = [];
+        let current_time = 0;
+        let IS_TIME_TICKING = false;
+        let PLAYER_TIME_LEFT = TIME_PER_PLAYER;
+
+        function loop(time) {
+            let deltaT = time - current_time;
+            current_time = time;
+            if (IS_TIME_TICKING) {
+                PLAYER_TIME_LEFT -= deltaT / 1000;
+                setTimeText(PLAYER_TIME_LEFT | 0);
+            }
+            if (PLAYER_TIME_LEFT <= 0) {
+                IS_TIME_TICKING = false;
+
+                timeP.remove();
+                streakP.remove();
+                pointsP.remove();
+                nextRelay().then((x) => {
+                    THINGS_TO_UPDATE.forEach((x) => {
+                        x.kill();
+                    });
+                    THINGS_TO_UPDATE = [];
+                    toggleHeader();
+                    let okBtn = new P("ok", width * 0.05, height * 0.05, r(width / 22) + "px").fromCenter();
+                    okBtn.set("border", "solid green " + r(width / 300) + "px");
+                    okBtn.set("borderRadius", r(width / 30) + "px");
+                    okBtn.color = "green";
+                    okBtn.set("backgroundColor", "lightgreen");
+                    okBtn.shape.addEventListener("click", () => {
+                        x.removeFn();
+                        okBtn.remove();
+                        startScreen().then(() => {
+                            x.fadeOut();
+                            PLAYER_TIME_LEFT = TIME_PER_PLAYER;
+                            CURRENT_STREAK = 0;
+                            CURRENT_POINTS = 0;
+                            IS_ADDING_POINTS = false;
+                            timeP = {};
+                            streakP = {};
+                            pointsP = {};
+                            startDropping(SESSION_LETTERS);
+                            setPointsText(CURRENT_POINTS, true);
+                            setTimeText(PLAYER_TIME_LEFT);
+                            setStreakText(1);
+                            IS_TIME_TICKING = true;
+                            toggleHeader();
+                            current_time = window.performance.now();
+                            play();
+                        });
+                    });
+                    okBtn.zIndex = 16;
+                });
+            }
+
+            for (let i = THINGS_TO_UPDATE.length - 1; i >= 0; i--) {
+                THINGS_TO_UPDATE[i].update(deltaT);
+                if (THINGS_TO_UPDATE[i].dead) {
+                    THINGS_TO_UPDATE.splice(i, 1);
+                }
+            }
+            if (LOOPING) requestAnimationFrame(loop);
+        }
+
+        let VARIOUS_LOOPS = [];
+
+        function startDropping(letter) {
+            console.log(letter)
+            let letters = [];
+            if (letter instanceof Array) {
+                letters = letter.map((x) => x.toLowerCase());
+            } else {
+                if (!alphabet.includes(letter) || letter.length > 1) {
+                    console.error(letter + " is not a letter");
+                    return;
+                }
+                letters = [letter.toLowerCase()];
+            }
+            if (letters.includes('&')) {
+                letters = letters.map(x => x == '&' ? 'animals' : x)
+            }
+            if (letters.includes('+')) {
+                letters = letters.map(x => x == '+' ? 'characters' : x)
+            }
+
+            let interval = setInterval(() => {
+                let config = getFallerConfig();
+                let listOfWords = []
+                letters.forEach(letter => {
+                    Object.keys(KEYWORDS_CONFIG[letter]).forEach(word => {
+                        listOfWords.push({
+                            letter: letter,
+                            name: word,
+                            url: KEYWORDS_CONFIG[letter][word]
+                        })
+                    })
+                })
+                createFaller(
+                    getRandom(listOfWords),
+                    config.speed,
+                    config.spin,
+                    config.extraPoints,
+                    config.extraPoints > 50 ? "yellow" : "grey",
+                    config.angle,
+                    config.isBomb
+                );
+            }, 900);
+            VARIOUS_LOOPS.push(interval);
+            //loop for dropping the correct words
+            let correctWordDelay = 2300; //no round values for fewer patterns
+            let onlyCorrectDrop = setInterval(() => {
+                if (CURRENT_REQUIRED_WORDS.length == 0) return;
+                let config = getFallerConfig(2);
+                createFaller(getRandom(CURRENT_REQUIRED_WORDS), config.speed, config.spin, 10, "blue", config.angle, config.isBomb);
+            }, correctWordDelay);
+            VARIOUS_LOOPS.push(onlyCorrectDrop);
+            if (EXTRAS_MODE) {
+                //usually means that the random loop wont drop the correct word often, so another loop is needed
+                let secondCorrectDrop = setInterval(() => {
+                    if (CURRENT_REQUIRED_WORDS.length == 0) return;
+                    let config = getFallerConfig(3);
+                    createFaller(getRandom(CURRENT_REQUIRED_WORDS), config.speed, config.spin, 10, "blue", config.angle, config.isBomb);
+                }, (correctWordDelay * 1.33 | 0));
+                VARIOUS_LOOPS.push(secondCorrectDrop);
+            }
+            let completelyWrong = setInterval(() => {
+                let config = getFallerConfig(0.8);
+                let wrongAlpha = alphabet.split("").filter((x) => !letters.includes(x));
+                let listOfWords = []
+                let wrongLetter = getRandom(wrongAlpha)
+                Object.keys(KEYWORDS_CONFIG[wrongLetter]).forEach(word => {
+                    listOfWords.push({
+                        letter: wrongLetter,
+                        name: word,
+                        url: KEYWORDS_CONFIG[wrongLetter][word]
+                    })
+                })
+                createFaller(getRandom(listOfWords), config.speed, config.spin, 10, getRandom(["blue", "grey", "green", "yellow"]), config.angle, false);
+            }, 4100);
+            VARIOUS_LOOPS.push(completelyWrong);
+        }
+
+        function stopDropping() {
+            VARIOUS_LOOPS.forEach((x) => {
+                clearInterval(x);
+            });
+        }
+
+        stop = () => {
+            LOOPING = false;
+            stopDropping();
+        };
+
+
+
+        function getFallerConfig(multiplier) {
+            if (multiplier === undefined) multiplier = 1;
+            let rand = getRandom() * multiplier; //if multiplier is larger, higher chance of lower diifculty
+            if (rand < 0.1) {
+                //10%
+                return {
+                    speed: getRandom(5, 7),
+                    spin: getRandom(8, 10),
+                    extraPoints: r(getRandom(30, 55)),
+                    angle: getRandom([0, 90, 270, 180, 45]),
+                    isBomb: getRandom(10) === 0 ? true : false,
+                };
+            } else if (rand < 0.3) {
+                //20%
+                return {
+                    speed: getRandom(3, 4),
+                    spin: getRandom(5, 7),
+                    extraPoints: r(getRandom(3, 5)),
+                    angle: getRandom([0, 90, 270, 180]),
+                    isBomb: getRandom(15) === 0 ? true : false,
+                };
+            } else if (rand < 0.5) {
+                //20%
+                return {
+                    speed: getRandom(1, 2),
+                    spin: getRandom(1, 2),
+                    extraPoints: r(getRandom(1, 2)),
+                    angle: getRandom([0, 90, 270, 180]),
+                    isBomb: getRandom(20) === 0 ? true : false,
+                };
+            } else if (rand < 0.75) {
+                //25%
+                return {
+                    speed: getRandom(1, 2),
+                    spin: 0,
+                    extraPoints: 1,
+                    angle: getRandom([0, 90, 270, 180]),
+                    isBomb: getRandom(40) === 0 ? true : false,
+                };
+            } else {
+                //25%
+                return {
+                    speed: getRandom(1, 2),
+                    spin: 0,
+                    extraPoints: 0,
+                    angle: 0,
+                    isBomb: getRandom(50) === 0 ? true : false,
+                };
+            }
+        }
+
+        function showPoints(x, y, points) {
+            if (typeof points !== "number") {
+                console.error(letter + " is not a number");
+                return;
+            }
+            let pointDiv = new P(points, x, y, r(width / 20) + "px").fromCenter();
+            pointDiv.color = getValue('pointsColor', points);
+            pointDiv.set("textShadow", "white 0 0 3px");
+            pointDiv.set("fontStyle", "bolder");
+            let pointLoop = setInterval(() => {
+                pointDiv.y -= 1;
+            }, 50);
+            setTimeout(() => {
+                pointDiv.remove();
+                clearInterval(pointLoop);
+            }, 1000);
+        }
+
+        function play() {
+            LOOPING = true;
+            loop()
+        }
+
+        setupBody(id("MAIN_SCREEN")).then(() => {
+            let background = "ac_background" + getRandom(5) + ".jpg";
+            DOMObjectGlobals.body.style.backgroundColor = "black";
+            DOMObjectGlobals.body.style.backgroundImage = "url(\"./important_files/space_bgs/" + background.toString() + '")';
+            DOMObjectGlobals.body.style.backgroundSize = width + "px auto";
+            DOMObjectGlobals.body.style.backgroundRepeat = "no-repeat";
+            setup();
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,17 @@
+
+##################################################################################################################################
+#                                                                                                                                #
+#        To add a custom list of words, thats not just a letter, add their file names here.                                      #
+#        for example, the images tennis.png, gymnastics.png, volleyball.png, judo.png, pingpong.png, basketball.png are in       #
+#        the images folder so I can write their names below separated with commas, and that list will appear in the game         #
+#        when you click the custom button, they will appear there.                                                               #
+#                                                                                                                                # 
+#                      !!!     IMPORTANT run UPDATE_IMAGES.bat after changing this file    !!!                                   #
+#                                                                                                                                #
+##################################################################################################################################
+
+banana, cabbage, potato, cucumber, strawberry, carrot, pepper, grape, orange, pear
+
+tennis, gymnastics, volleyball, judo, pingpong, basketball
+
+dishwasher, lamp, candle, microwave, broom, kettle, washing_machine, vacuum_cleaner
