@@ -27,8 +27,6 @@
             id="MAIN_SCREEN"></div>
     </div>
     <script>
-        //TODO fix this whole garbage file
-        let IMAGE_PATH = "./images/";
         let TIME_PER_PLAYER = 61;
 
         let LEFT_PADDING = width * 0.1;
@@ -400,7 +398,6 @@
                     let objectToProcess = {};
                     let ONLY_EXTRAS = false;
                     let pDiv = {};
-                    console.log(letter)
                     let left_padding = width * 0.3;
                     if (SELECTED_LETTERS.length > 3) {
                         LETTER_WIDTH = width * 0.05
@@ -469,10 +466,8 @@
                                     chosenFew.splice(SESSION_WORDS.indexOf(letter), 1);
                                 } else {
                                     if (SESSION_WORDS.length >= 20) {
-                                        console.log(imgs);
                                         let toRemove = SESSION_WORDS[0];
                                         imgs.filter((x) => x.name === toRemove)[0].shape.click();
-                                        console.log(toRemove);
                                     }
                                     SESSION_WORDS.push(obj);
                                     chosenFew.push(letter)
@@ -482,7 +477,6 @@
                             });
                             stuffToDelete.push(img);
                         });
-                        console.log(j, (Object.keys(objectToProcess)).splice(0, 50).length - 1)
                         if (j == (Object.keys(objectToProcess)).splice(0, 50).length - 1) {
                             LAST_Y = LAST_Y + LETTER_WIDTH * (y_index + 1)
                         }
@@ -801,7 +795,6 @@
         let VARIOUS_LOOPS = [];
 
         function startDropping(letter) {
-            console.log(letter)
             let letters = [];
             if (letter instanceof Array) {
                 letters = letter.map((x) => x.toLowerCase());
@@ -818,21 +811,22 @@
             if (letters.includes('+')) {
                 letters = letters.map(x => x == '+' ? 'characters' : x)
             }
+            let listOfWords = []
+            letters.forEach(letter => {
+                Object.keys(KEYWORDS_CONFIG[letter]).forEach(word => {
+                    listOfWords.push({
+                        letter: letter,
+                        name: word,
+                        url: KEYWORDS_CONFIG[letter][word]
+                    })
+                })
+            })
 
             let interval = setInterval(() => {
                 let config = getFallerConfig();
-                let listOfWords = []
-                letters.forEach(letter => {
-                    Object.keys(KEYWORDS_CONFIG[letter]).forEach(word => {
-                        listOfWords.push({
-                            letter: letter,
-                            name: word,
-                            url: KEYWORDS_CONFIG[letter][word]
-                        })
-                    })
-                })
+
                 createFaller(
-                    getRandom(listOfWords),
+                    getRandom(10) >= 1 ? getRandom(listOfWords) : getRandom(CURRENT_REQUIRED_WORDS), //10% chance to gave a fast falling correct word
                     config.speed,
                     config.spin,
                     config.extraPoints,
