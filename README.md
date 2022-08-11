@@ -4,6 +4,8 @@ This is a simple game for ESL teachers in kindergarten classes. This lets you ch
 
 ![screenshot of PictureFall](./important_files/screenshot.png)
 
+**[Click Here to Try it now!](https://needtoupdate.github.io/PictureFall/)**
+
 ---
 
 # How To Play
