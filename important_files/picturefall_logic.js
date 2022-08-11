@@ -203,20 +203,6 @@ function r(num) {
   return num | 0;
 }
 
-//IMPORTANT TO USE EACH TIME
-function setupBody(object) {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        DOMObjectGlobals.body = object;
-        width = object.clientWidth;
-        height = object.clientHeight;
-        resolve(object);
-      });
-    });
-  });
-}
-
 function id(string) {
   return document.getElementById(string);
 }
@@ -1457,7 +1443,24 @@ class EventEmitter {
     delete this.events.done;
   }
 }
-
+//IMPORTANT TO USE EACH TIME
+function setupBody(object) {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        DOMObjectGlobals.body = object;
+        width = object.clientWidth;
+        height = object.clientHeight;
+        let a = new Img("../important_files/logo.png", width * 0.75, 0, width / 4);
+        a.shape.style.cursor = "pointer";
+        a.shape.addEventListener("click", () => {
+          window.location.assign("https://whatstheword.io");
+        });
+        resolve(object);
+      });
+    });
+  });
+}
 class Hitbox {
   constructor(x, y, WidthorRadius, height, drawBounds) {
     this.x = x;
