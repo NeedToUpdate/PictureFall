@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-"""Creates the config file for picturefall.html to use.
+"""Creates the config file for index.html to use.
+
+
+    ################################################
+    IF YOU ARE ON MAC PRESS 'Run' UP TOP OR PRESS F5
+    ################################################
+
 
 Make sure to have 2 folders in the same folder as this file. images and important_files
 - this folder
