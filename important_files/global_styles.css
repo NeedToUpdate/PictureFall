@@ -25,159 +25,20 @@ body {
   width: 100%;
   height: 100vh;
 }
-.bluebtn {
-  z-index: 100000;
-  position: absolute;
-  left: 0%;
-  top: 82%;
-  max-height: 40px;
-  max-width: 70px;
-  border-radius: 20px;
-  background-color: #00b7ff;
-  border: blue solid 4px;
-  color: darkblue;
-  font-size: 1em;
-  font-family: "Minion Pro";
-}
 
-#jmpleft {
+#word_select {
+  padding: 1rem;
+  box-sizing: border-box;
+  border-radius: 1rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: white solid 0.3vw;
+  overflow-y: scroll;
 }
-#jmpright {
-  left: 143px;
-}
-#jump {
-  left: 71px;
-}
-#hover {
-  left: 75px;
-  top: 76%;
-}
-#powerup {
-  background-color: orange;
-  top: 90%;
-}
-#shootright {
-  background-color: red;
-  top: 90%;
-  left: 71px;
-}
-#shield {
-  top: 90%;
-  left: 143px;
-  background-color: green;
-}
-#playpause {
-  top: 0%;
-  max-height: 25px;
-}
-
-.at_top {
-  top: 0px;
-}
-.locked {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
+#word_select > p {
+  padding: 0;
+  margin-top: 1vw;
+  font-size: 1.5vw;
 }
 * {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
-}
-
-@keyframes grow {
-  to {
-    left: -50vw;
-    top: -20vw;
-    width: 100vw;
-  }
-}
-@keyframes grow2 {
-  to {
-    left: 15vw;
-    top: 24vw;
-    width: 24vw;
-  }
-}
-@keyframes grow3 {
-  to {
-    left: -80vw;
-    top: -30vw;
-    width: 200vw;
-  }
-}
-@keyframes zoombg {
-  from {
-    background-position: 0 0;
-    background-size: auto 100%;
-  }
-  to {
-    background-position: -50vw 100%;
-    background-size: auto 200%;
-  }
-}
-@keyframes fadeOut {
-  to {
-    opacity: 0;
-  }
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes growIn {
-  from {
-    width: 0;
-  }
-}
-
-@keyframes growOut {
-  to {
-    width: 0;
-  }
-}
-
-@font-face {
-  font-family: "quikhand";
-  src: url("./fonts/quikhand.ttf") format("truetype");
-}
-
-@font-face {
-  font-family: "mk1";
-  src: url("./fonts/mk1.ttf") format("truetype");
-}
-
-#nextbtn {
-  border-radius: 50%;
-  color: blue;
-  border: darkblue 4px solid;
-  background-color: lightblue;
-  width: 75px;
-}
-
-.smoothed {
-  transition: 1s;
-}
-.slowsmoothed {
-  transition: 2s;
-}
-.fastsmoothed {
-  transition: 0.2s;
 }
