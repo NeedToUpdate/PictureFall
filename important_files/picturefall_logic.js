@@ -1451,7 +1451,7 @@ function setupBody(object) {
         DOMObjectGlobals.body = object;
         width = object.clientWidth;
         height = object.clientHeight;
-        let a = new Img("../important_files/logo.png", width * 0.75, 0, width / 4);
+        let a = new Img("./important_files/logo.png", width * 0.75, 0, width / 4);
         a.shape.style.cursor = "pointer";
         a.shape.addEventListener("click", () => {
           window.location.assign("https://whatstheword.io");
