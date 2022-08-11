@@ -6,11 +6,14 @@
 #        the images folder so I can write their names below separated with commas, and that list will appear in the game         #
 #        when you click the custom button, they will appear there.                                                               #
 #                                                                                                                                # 
-#                      !!!     IMPORTANT run UPDATE_IMAGES.bat after changing this file    !!!                                   #
+#                      !!!     IMPORTANT run create_config.py after changing this file    !!!                                   #
 #                                                                                                                                #
 ##################################################################################################################################
 
-banana, cabbage, potato, cucumber, strawberry, carrot, pepper, grape, orange, pear
+
+
+
+banana, cabbage, potato, cucumber, strawberry, carrot, pepper, grapes, orange, pear
 
 tennis, gymnastics, volleyball, judo, pingpong, basketball
 

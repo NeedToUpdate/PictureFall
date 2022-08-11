@@ -1,0 +1,36 @@
+PictureFall v1 by Artem
+
+
+
+Double click index.html and open it in any browser. You do not need internet.
+
+Choose a letter (up to 4) to play with. Animals will just be the images in the /animals/ folder,
+characters are just the images in the /characters/ folder. Words are the wordlists in the CUSTOM_WORDS.txt file.
+
+Then choose today's images (up to 20). Press the checkmark in the top left corner.
+
+Then pick the one image to use, and press GO.
+
+
+
+For example, today you are doing letter B. 
+ 
+    1. Press B on the keyboard, press the checkmark key.
+
+    2. The words you want today are just "Ball, Bee, Balloon, Bear" and don't need the others.
+        
+        Select the 4 wanted words, and press the green checkmark in the top left corner.
+
+    3. Ask a student (or two) to come up to the board. They can choose what they want to use.
+    
+        The student picks 'Balloon'
+
+    4. Click the other 3 images, so only Balloon is visible.
+
+    5. Press GO in the top left corner.
+
+        The student will have 60 seconds to find all the Balloons. Clicking correct choices raises the combo score. 
+    
+    6. The score will be shown after 60 seconds. Press the OK button in the top left corner.
+
+    7. Go back to step 3 for the rest of the students.

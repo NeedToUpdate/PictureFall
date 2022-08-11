@@ -1,0 +1,27 @@
+PictureFall v1 by Artem
+
+If you wish to update images in the game, you must run the update_images.py file.
+
+Add images to the images folder. You can either add them to the main folder, or add them to the specific letters.
+For example, if you want the word 'Fox' to appear when you click 'X', make sure 'fox.png' is in the /x/ folder. 
+Otherwise it will appear in the 'F' section since it starts with 'F'.
+
+If you want to add a custom wordlist, like "tennis, gymnastics, volleyball, judo, pingpong, basketball", you can add the images to the folder,
+then add the words into CUSTOM_WORDS.txt. Then when you run update_images.py, your wordlist will appear in the 'words' option in the game.
+
+If this is the first time you use python, follow the following instructions:
+
+ON WINDOWS:
+
+1. Go to /Install Python/
+2. Double click 'python windows.exe'. Install it.
+4. Use the update_images.py file to update the images!
+
+ON MAC:
+
+1. Go to /Install Python/
+2. Double click 'python mac.pkg'. Install it.
+4. Double click the update_images.py file. It will open Idle
+5. Click 'run' or F5
+
+
