@@ -176,7 +176,7 @@
                 let chunk = num / 17;
                 if (IS_TIME_TICKING) {
                     for (let i = 0; i < 18; i++) {
-                        pointsP.set("textShadow", "lightgreen 0 0 5px");
+                        pointsP.set("textShadow", "lightgreen 0 0 " + r(width / 200) + 'px');
                         if (i === 17 && !dontAdd) {
                             CURRENT_POINTS += num;
                             TOTAL_POINTS += num;
@@ -391,6 +391,12 @@
             let stuffToDelete = [];
             SESSION_WORDS = [];
             let LAST_Y = TOP_PADDING
+            if (SELECTED_LETTERS.length == 1) {
+                LAST_Y = height * 0.3
+            } else if (SELECTED_LETTERS.length == 2) {
+                LAST_Y = height * 0.2
+
+            }
             return new Promise((resolve) => {
                 let chosenFew = [];
                 let imgs = [];
@@ -538,16 +544,16 @@
                             case '#':
                                 div = makeLetter('words', LEFT_PADDING + LETTER_WIDTH * (i % COL_NUM), height * 0.2 + LETTER_WIDTH * ((i / COL_NUM) | 0));
                                 div.letter = letter
-                                div.attachments.texts[0].shape.style.fontSize = '20px'
+                                div.attachments.texts[0].shape.style.fontSize = r(width / 60) + 'px'
                                 break;
                             case '+':
                                 div = makeLetter('characters', LEFT_PADDING + LETTER_WIDTH * (i % COL_NUM), height * 0.2 + LETTER_WIDTH * ((i / COL_NUM) | 0));
-                                div.attachments.texts[0].shape.style.fontSize = '20px'
+                                div.attachments.texts[0].shape.style.fontSize = r(width / 60) + 'px'
                                 div.letter = letter
                                 break;
                             case '&':
                                 div = makeLetter('animals', LEFT_PADDING + LETTER_WIDTH * (i % COL_NUM), height * 0.2 + LETTER_WIDTH * ((i / COL_NUM) | 0));
-                                div.attachments.texts[0].shape.style.fontSize = '20px'
+                                div.attachments.texts[0].shape.style.fontSize = r(width / 60) + 'px'
                                 div.letter = letter
                                 break;
 
@@ -637,10 +643,9 @@
                 }
                 THINGS_TO_UPDATE.push(faller);
 
-                function handleClick() {
+                function handleClick(e) {
                     let time = doubleClickPrevention[(width / faller.x) | 0].time;
-                    if (new Date() - time < 1000) {
-                        console.log('too fast')
+                    if (new Date() - time < 500) { //prevent accidental doubleclicking that happens with poor touchscreens
                         return;
                     }
                     doubleClickPrevention[(width / faller.x) | 0].time = new Date();
@@ -650,19 +655,23 @@
                         handleIncorrectWord(word_obj, faller);
                     }
                     faller.kill();
+                    e.preventDefault();
+                    e.stopPropagation()
                 }
                 if (isBomb) {
-                    x.set("border", "solid red 5px");
+                    x.set("border", "solid red " + r(width / 200) + 'px');
                     let fire = new Img("./important_files/explosion.png", -width / 10, -width / 10, width / 10).onLoad(() => {
                         faller.addDeathImage(fire.shape);
                     });
                     handleClick = function (e) {
+                        let pointsLost = Math.max(200, (Math.min(0, r(-CURRENT_POINTS / 4)))) // 0 < x < 200
                         faller.kill();
-                        showPoints(faller.x, faller.y, r(-CURRENT_POINTS / 4));
-                        setPointsText(r(-CURRENT_POINTS / 4));
+                        showPoints(faller.x, faller.y, pointsLost);
+                        setPointsText(pointsLost);
                         setStreakText(1);
                         CURRENT_STREAK = 0;
                         e.preventDefault();
+                        e.stopPropagation()
                     };
                     let bomb = new Img("./important_files/bomb.png", width / 50, width / 50, width / 15);
                     x.attach(bomb);
@@ -979,7 +988,7 @@
 
         function play() {
             LOOPING = true;
-            loop()
+            requestAnimationFrame(loop)
         }
 
         setupBody(id("MAIN_SCREEN")).then(() => {
