@@ -664,7 +664,7 @@
                         faller.addDeathImage(fire.shape);
                     });
                     handleClick = function (e) {
-                        let pointsLost = Math.max(200, (Math.min(0, r(-CURRENT_POINTS / 4)))) // 0 < x < 200
+                        let pointsLost = Math.max(-200, (Math.min(0, r(-CURRENT_POINTS / 4)))) // -200 < x < 0
                         faller.kill();
                         showPoints(faller.x, faller.y, pointsLost);
                         setPointsText(pointsLost);
