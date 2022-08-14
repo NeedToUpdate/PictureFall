@@ -391,9 +391,9 @@
             let stuffToDelete = [];
             SESSION_WORDS = [];
             let LAST_Y = TOP_PADDING
-            if (SELECTED_LETTERS.length == 1) {
+            if (SELECTED_LETTERS.length == 1 && !SELECTED_LETTERS.filter(x => ['#', '+', '&'].includes(x)).length) {
                 LAST_Y = height * 0.3
-            } else if (SELECTED_LETTERS.length == 2) {
+            } else if (SELECTED_LETTERS.length == 2 && !SELECTED_LETTERS.filter(x => ['#', '+', '&'].includes(x)).length) {
                 LAST_Y = height * 0.2
 
             }
