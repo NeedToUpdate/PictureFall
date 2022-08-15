@@ -404,7 +404,7 @@
                     let objectToProcess = {};
                     let ONLY_EXTRAS = false;
                     let pDiv = {};
-                    let left_padding = width * 0.3;
+                    let left_padding = width * 0.19;
                     if (SELECTED_LETTERS.length > 3) {
                         LETTER_WIDTH = width * 0.05
                     }
@@ -452,8 +452,8 @@
 
                     shuffle(Object.keys(objectToProcess)).splice(0, 50).forEach((name, j) => {
                         let url = objectToProcess[name];
-                        let x_index = ONLY_EXTRAS ? j % 10 : j % 8
-                        let y_index = ONLY_EXTRAS ? (j / 10) | 0 : (j / 8) | 0
+                        let x_index = ONLY_EXTRAS ? j % 10 : SELECTED_LETTERS.length > 3 ? (j % 12) : j % 10
+                        let y_index = ONLY_EXTRAS ? (j / 10) | 0 : SELECTED_LETTERS.length > 3 ? ((j / 12) | 0) : (j / 10) | 0
 
                         let img = new Img(url, left_padding + IMAGE_WIDTH * x_index, LAST_Y + LETTER_WIDTH * y_index, IMAGE_WIDTH).onLoad(() => {
                             img.name = name;
